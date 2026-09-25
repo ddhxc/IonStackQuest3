@@ -457,6 +457,7 @@ def main():
         print(f"Error: {elf_path} not found")
         sys.exit(1)
 
+    strict = '--strict' in sys.argv
     print(f"[*] Parsing: {elf_path}")
     results, warnings, errors = resolve_all(elf_path)
 
@@ -497,10 +498,18 @@ def main():
         if not any(flag in sys.argv for flag in ['--json', '--check']):
             print(f"\n{config_text}")
 
-    if errors:
-        print("\n[!] Some symbols could not be resolved. You may need to manually")
-        print("    add them to the config or use a kernel with matching symbols.")
+    if strict and errors:
+        print("\n[!] Strict mode is enabled; unresolved symbols caused failure.")
         sys.exit(1)
+
+    if errors:
+        print("\n[!] Some symbols could not be resolved. This usually means the kernel is stripped, "
+              "the ROM does not match the selected device, or the base address is incorrect.")
+        print("    A partial ionstack.conf was still generated; use a matching unstripped kernel or")
+        print("    set the correct kimage_text_base to improve accuracy.")
+        return
+
+    print("\n[+] All required symbols were resolved successfully.")
 
 
 if __name__ == "__main__":
